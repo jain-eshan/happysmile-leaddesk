@@ -86,7 +86,7 @@ export const scenarios: Scenario[] = [
           options: ['Call me now', 'Pick a time', 'WhatsApp me instead'],
           picked: 'Pick a time',
         },
-        events: ['1:12:20  Thank-you page shows caller name, number and choices', '1:12:31  Riya picks "Pick a time": 7:30 pm today'],
+        events: ['1:12:20  Thank-you page shows caller name, number and choices', '1:12:31  Riya picks “Pick a time”: 7:30 pm today'],
         why: 'The patient sees who will call and from which number, and can choose when. 49% of Indians say they would answer more if they could schedule the call themselves.',
         solves: 'Patient: distrust of unknown numbers',
       },
@@ -139,7 +139,7 @@ export const scenarios: Scenario[] = [
           '7:33:20  Riya chose Thu 7:30 pm · Sector 29',
           '7:33:21  Booked · credited to Sector 29 coordinator (Pooja)',
         ],
-        why: 'The call is unhurried. It answers the two things she cares about, price and timing, and makes her choose between two real options, which is a stronger commitment than a "yes".',
+        why: 'The call is unhurried. It answers the two things she cares about, price and timing, and makes her choose between two real options, which is a stronger commitment than a “yes”.',
         solves: 'Patient: unclear prices · Dentist: right specialist slot',
       },
       {
@@ -203,7 +203,7 @@ export const scenarios: Scenario[] = [
           options: ['Call me now', 'Pick a time', 'WhatsApp me instead'],
           picked: 'Call me now',
         },
-        events: ['11:05:30  Karan picks "Call me now"'],
+        events: ['11:05:30  Karan picks “Call me now”'],
         why: 'Inside calling hours and the user asked for a call, so the agent dials right away.',
         solves: 'Ops head: speed when the patient wants it',
       },
@@ -228,7 +228,7 @@ export const scenarios: Scenario[] = [
           ],
         },
         events: [
-          '11:07:02  Asked "are you AI?" → disclosed',
+          '11:07:02  Asked “are you AI?” → disclosed',
           '11:08:15  Clinical question (diabetes) → no advice, flagged',
           '11:09:40  Booked Sat 10:30 am · Dr. Nair (implants) · Sector 29',
           '11:10:05  Handoff card to Pooja: priority 1, SLA 30 min',
@@ -315,7 +315,7 @@ export const scenarios: Scenario[] = [
           ],
         },
         events: ['9:47:00  Checked in (front desk)'],
-        why: 'Same-day bookings do not need reminders, they need directions and a way to say "running late".',
+        why: 'Same-day bookings do not need reminders, they need directions and a way to say “running late”.',
         solves: 'Ops head: chair held, not lost',
       },
     ],
@@ -432,12 +432,12 @@ export interface Lead {
 }
 
 export const statusMeta: Record<LeadStatus, { label: string; tone: string }> = {
-  needs_you: { label: 'Needs you', tone: 'red' },
-  booked: { label: 'Booked', tone: 'green' },
-  at_risk: { label: 'At risk', tone: 'amber' },
+  needs_you: { label: 'Needs you', tone: 'danger' },
+  booked: { label: 'Booked', tone: 'ok' },
+  at_risk: { label: 'At risk', tone: 'warn' },
   no_answer: { label: 'No answer yet', tone: 'grey' },
-  scheduled: { label: 'Call scheduled', tone: 'blue' },
-  whatsapp_only: { label: 'WhatsApp only', tone: 'blue' },
+  scheduled: { label: 'Call scheduled', tone: 'info' },
+  whatsapp_only: { label: 'WhatsApp only', tone: 'info' },
   control: { label: 'Control group', tone: 'grey' },
 };
 
@@ -504,7 +504,7 @@ export const leads: Lead[] = [
     group: 'AI-first',
     priority: 81,
     reason: 'Booked but no reply to confirmation in 3 h',
-    summary: 'Booked Thu 7 pm while driving. Said "haan theek hai" quickly. Has not replied 1 to the WhatsApp confirmation.',
+    summary: 'Booked Thu 7 pm while driving. Said “haan theek hai” quickly. Has not replied 1 to the WhatsApp confirmation.',
     decider: 'Patient',
     worry: 'Not clear (short call)',
     slot: 'Thu 7:00 pm · Orthodontist',

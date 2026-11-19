@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { experiment, kpis, leads, priceBands, statusMeta } from '../data';
 import type { Lead, LeadStatus } from '../data';
 
@@ -25,23 +25,28 @@ function Rules({ onClose }: { onClose: () => void }) {
     teenParent: true,
   });
   const flip = (k: string) => setRules((r) => ({ ...r, [k]: !r[k] }));
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose();
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
   const Row = ({ k, label }: { k: string; label: string }) => (
     <div className="toggle-row">
-      <span>{label}</span>
-      <button className={'switch' + (rules[k] ? ' on' : '')} onClick={() => flip(k)} aria-label={label} />
+      <span id={'lbl-' + k}>{label}</span>
+      <button className="switch" role="switch" aria-checked={rules[k]} aria-labelledby={'lbl-' + k} onClick={() => flip(k)} />
     </div>
   );
   return (
     <>
-      <div className="drawer-bg" onClick={onClose} />
-      <aside className="drawer">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <button className="drawer-bg" aria-label="Close rules" onClick={onClose} />
+      <aside className="drawer" role="dialog" aria-modal="true" aria-label="Rules">
+        <div className="drawer-head">
           <div>
             <div className="eyebrow">Settings · owned by the front-desk lead</div>
             <h2 style={{ marginTop: 6 }}>Rules</h2>
           </div>
-          <button className="pill small white" onClick={onClose}>
-            Close
+          <button className="btn light sm" onClick={onClose} autoFocus>
+            Close rules
           </button>
         </div>
         <p className="muted" style={{ marginTop: 8 }}>
@@ -77,7 +82,7 @@ function Rules({ onClose }: { onClose: () => void }) {
           <h3>Playbooks</h3>
           <div className="toggle-row">
             <span>Aligners and braces · Implants · Tooth pain</span>
-            <span className="tag green">Live</span>
+            <span className="tag ok">Live</span>
           </div>
           <Row k="teenParent" label="Teen braces: invite both parents, prefer weekends" />
           <Row k="cleaningWa" label="Cleaning: WhatsApp only, no call" />
@@ -98,6 +103,7 @@ function Rules({ onClose }: { onClose: () => void }) {
 
         <div className="card rule">
           <h3>Approved price bands (the agent may only say these)</h3>
+          <div className="table-wrap">
           <table className="bands">
             <thead>
               <tr>
@@ -118,6 +124,7 @@ function Rules({ onClose }: { onClose: () => void }) {
               ))}
             </tbody>
           </table>
+          </div>
           <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
             Final price always after the exam. Signed off by the clinical lead.
           </p>
@@ -140,19 +147,19 @@ function Detail({ lead }: { lead: Lead }) {
               {lead.id}
             </span>
           </div>
-          <h2 style={{ marginTop: 8 }}>{lead.name}</h2>
+          <h2>{lead.name}</h2>
           <div className="muted" style={{ fontSize: 14 }}>
             {lead.treatment} · {lead.clinic} · {lead.source} · enquired {lead.enquired}
           </div>
         </div>
         <div className="detail-actions">
-          <button className="pill small">Call now</button>
-          <button className="pill small white">WhatsApp</button>
-          <button className="pill small white">Mark done</button>
+          <button className="btn sm">Call {lead.name.split(' ')[0]}</button>
+          <button className="btn light sm">Send WhatsApp</button>
+          <button className="btn light sm">Mark as handled</button>
         </div>
       </div>
 
-      <div className="next">
+      <div className="next-box">
         <div className="eyebrow">Next best action · {lead.reason}</div>
         <p>{lead.next}</p>
       </div>
@@ -224,24 +231,25 @@ export default function Desk() {
   const lead = scoped.find((l) => l.id === selected) ?? visible[0] ?? scoped[0];
 
   return (
-    <main className="page">
-      <div className="desk-head">
+    <main className="page" id="main">
+      <div className="screen-head">
         <div>
-          <div className="eyebrow">Screen 2 · What HappySmile sees afterwards</div>
-          <h2 style={{ marginTop: 8 }}>Front-desk queue · Today</h2>
+          <span className="tag accent">Screen 2 · What HappySmile sees afterwards</span>
+          <h1 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', marginTop: 14 }}>Front-desk queue</h1>
+          <p>Every enquiry in one place, ranked by what needs a person now. The agent books routine consults; your team closes the rest.</p>
         </div>
         <div className="desk-controls">
           <div className="seg">
             {(['All', 'Sector 29', 'Golf Course Rd'] as const).map((c) => (
-              <button key={c} className={clinic === c ? 'on' : ''} onClick={() => setClinic(c)}>
+              <button key={c} aria-pressed={clinic === c} onClick={() => setClinic(c)}>
                 {c}
               </button>
             ))}
           </div>
-          <button className="pill small white" onClick={() => setRulesOpen(true)}>
-            Rules
+          <button className="btn light sm" onClick={() => setRulesOpen(true)}>
+            Open rules
           </button>
-          <span className="tag amber">Pilot · illustrative data</span>
+          <span className="tag warn">Pilot · illustrative data</span>
         </div>
       </div>
 
@@ -277,19 +285,21 @@ export default function Desk() {
 
       <div className="desk">
         <div className="card queue">
-          <div className="queue-tabs">
+          <div className="queue-tabs" role="group" aria-label="Filter the queue">
             {filters.map((f) => (
-              <button key={f.id} className={filter === f.id ? 'on' : ''} onClick={() => setFilter(f.id)}>
+              <button key={f.id} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
                 {f.label}
                 <span className="count">{count(f.id)}</span>
               </button>
             ))}
           </div>
-          {visible.length === 0 && <div style={{ padding: 18 }} className="muted">Nothing here right now.</div>}
+          {visible.length === 0 && <div className="empty">Nothing waiting here. Switch to All to see every enquiry.</div>}
+          <ul className="lead-list">
           {visible.map((l) => {
             const s = statusMeta[l.status];
             return (
-              <div key={l.id} className={'lead' + (lead && l.id === lead.id ? ' on' : '')} onClick={() => setSelected(l.id)}>
+              <li key={l.id}>
+              <button className="lead" aria-current={lead && l.id === lead.id ? 'true' : undefined} onClick={() => setSelected(l.id)}>
                 <div className="top">
                   <span className="nm">{l.name}</span>
                   <span className={'tag ' + s.tone}>{s.label}</span>
@@ -299,17 +309,19 @@ export default function Desk() {
                   <span>{l.treatment}</span>
                   <span>{l.clinic}</span>
                   <span>{l.enquired}</span>
-                  <span className="prio">P{l.priority}</span>
+                  <span className="prio">Priority {l.priority}</span>
                 </div>
-              </div>
+              </button>
+              </li>
             );
           })}
+          </ul>
         </div>
 
         <div>
           {lead && <Detail lead={lead} />}
           <div className="card exp">
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+            <div className="exp-head">
               <div>
                 <div className="eyebrow">Experiment · pilot week 2</div>
                 <h3 style={{ marginTop: 4 }}>AI-first vs today's process</h3>
@@ -318,9 +330,9 @@ export default function Desk() {
                 20% of enquiries randomly kept on the current callback
               </span>
             </div>
-            {experiment.map((e) => (
-              <div className="exp-row" key={e.metric}>
-                <div style={{ fontSize: 14 }}>{e.metric}</div>
+            {experiment.map((e, i) => (
+              <div className={'exp-row' + (i === experiment.length - 1 ? ' key' : '')} key={e.metric}>
+                <div className="metric" style={{ fontSize: 14 }}>{e.metric}</div>
                 <div className="bars">
                   <div className="bar">
                     <span>AI-first</span>

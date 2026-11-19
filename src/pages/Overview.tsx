@@ -19,7 +19,7 @@ const personas = [
 
 export default function Overview() {
   return (
-    <main className="page">
+    <main className="page" id="main">
       <section className="hero">
         <div>
           <div className="eyebrow">Twenty2 PM case · HappySmile Dental</div>
@@ -30,10 +30,10 @@ export default function Overview() {
             closes the high-value ones with full context.
           </p>
           <div className="hero-actions">
-            <Link to="/patient" className="pill">
+            <Link to="/patient" className="btn">
               Screen 1 · What the patient sees
             </Link>
-            <Link to="/desk" className="pill ghost">
+            <Link to="/desk" className="btn ghost">
               Screen 2 · What HappySmile sees
             </Link>
           </div>
@@ -66,7 +66,7 @@ export default function Overview() {
         <div className="flow">
           {flow.map((f, i) => (
             <div className="card" key={f.t}>
-              <div className="num">0{i + 1}</div>
+              <div className="n">{i + 1}</div>
               <h3>{f.t}</h3>
               <p>{f.d}</p>
             </div>
@@ -140,17 +140,17 @@ export default function Overview() {
         <div className="three-col">
           <div className="card stake">
             <div className="eyebrow">Operations head</div>
-            <div className="quote">"Leads we call within 5 minutes convert 3x better."</div>
+            <div className="quote">“Leads we call within 5 minutes convert 3x better.”</div>
             <p>Agreed on speed. But 3x on a 30% base would be 90%, so part of it is which leads got called fast. The control group measures the real effect.</p>
           </div>
           <div className="card stake">
             <div className="eyebrow">Founder</div>
-            <div className="quote">"It should sound so human nobody realises."</div>
+            <div className="quote">“It should sound so human nobody realises.”</div>
             <p>Agreed on the goal: a call that feels like his own team. We get there with fast replies and natural Hinglish. The agent never denies being AI when asked, and we test upfront disclosure.</p>
           </div>
           <div className="card stake">
             <div className="eyebrow">Front-desk lead</div>
-            <div className="quote">"Every lead should still go to my team."</div>
+            <div className="quote">“Every lead should still go to my team.”</div>
             <p>The wait is the leak, so leads cannot wait. But her team owns the patient: every lead in her queue, the high-value ones handed over with context, bookings credited to her coordinators.</p>
           </div>
         </div>
@@ -158,16 +158,14 @@ export default function Overview() {
 
       <section className="cta-band">
         <div>
-          <div className="eyebrow" style={{ color: 'rgba(255,255,255,0.6)' }}>
-            The two screens
-          </div>
+          <div className="eyebrow">The two screens</div>
           <h2 style={{ marginTop: 8 }}>Walk through four real patient journeys, then see the front desk's day.</h2>
         </div>
         <div className="hero-actions" style={{ marginTop: 0 }}>
-          <Link to="/patient" className="pill">
+          <Link to="/patient" className="btn">
             Open screen 1
           </Link>
-          <Link to="/desk" className="pill ghost">
+          <Link to="/desk" className="btn ghost">
             Open screen 2
           </Link>
         </div>
