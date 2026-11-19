@@ -73,16 +73,19 @@ Patterns borrowed from other products (do not name them on screen unless useful)
 
 ## 4. Design system (Twenty2-like, not Twenty2-branded)
 
-Reference: https://www.twentytwo.in/ . Match the feel, not the brand.
-- Background `#F9FAFB`, cards `#FFFFFF`, ink `#111111`, secondary text `#374151`, muted `#6B7280`, lines `#E5E7EB`.
-- Headings: **Miriam Libre** (serif, weight 400). Body: **Inter** as a stand-in for Aeonik. Load both from Google Fonts.
-- Black pill buttons (`border-radius: 9999px`), ghost and white pill variants. Cards with 12 px radius and 1 px border, no heavy shadows. Large serif headlines, generous whitespace, low-energy professional tone.
-- Status tags: green (booked), amber (at risk), red (needs you), blue (scheduled, WhatsApp only), grey (no answer, control).
+Reference: https://www.twentytwo.in/use-cases/healthcare/ . Match the feel, not the brand. Measured from their page:
+- Headings use **Miriam Libre** (a geometric sans, not a serif): h1 weight 400 with letter-spacing about -0.03em, h2 and h3 weight 600. Body: **Inter** as a stand-in for their Aeonik. Self-host both with `@fontsource/miriam-libre` and `@fontsource/inter` (do not rely on Google Fonts).
+- Background `#F9FAFB`, cards `#FFFFFF` with a 1 px `#E5E7EB` border and 12 px radius, ink `#111111`, secondary text `#374151`, muted `#6B7280`.
+- One accent: indigo. `#4652E6` for fills, `#3D55C4` text on `#EEF0FF` for labels (their "HEALTHCARE & MEDICAL" chip style: 11 px, 600, uppercase, 0.05em tracking).
+- Black pill buttons (`border-radius: 9999px`, Miriam Libre 500), white bordered pill for secondary. Buttons start with a verb.
+- Product UI floats as cards on a soft lavender-to-peach mist panel. **No device frames**: Screen 1 shows the patient's screen as a rounded white card with a channel strip (website, WhatsApp, incoming call, on a call).
+- Status colours kept clear of the indigo hue: ok `#0F766E` on `#E6F4F1`, warn `#92400E` on `#FEF3C7`, danger `#B42318` on `#FEE4E2`, info `#0E7490` on `#E0F2FE`, grey.
+- Floor: works at 320, 375, 768, 1280 px with no sideways scroll; `:focus-visible` ring in indigo; hover styles only under `@media (hover: hover)`; `prefers-reduced-motion` stops the call waveform; tabular numbers on times and KPIs; every clickable thing is a real `button` or `a`.
 - **Do not** use the Twenty2 or Shiprocket logo, wordmark or the name as if this were their product. Brand the app "HappySmile Lead Desk" with a simple black "H" mark, subtitle "Concept on a Twenty2-style voice agent". Footer on every page: "Concept prototype by Eshan Jain (ISB PGP 2027) for the Twenty2 Product Manager case. HappySmile is fictional and all data is illustrative. Not an official Twenty2 or Shiprocket product. Price bands are modelled on public list prices from Indian dental chains."
 
 ## 5. Tech
 
-- Vite + React + TypeScript, `react-router-dom` v6, plain CSS in one `styles.css` (no UI library). No backend.
+- Vite + React + TypeScript, `react-router-dom` v6, plain CSS in one `styles.css` with tokens (no UI library), fonts via Fontsource. No backend.
 - `vercel.json` with an SPA rewrite of every path to `/index.html`.
 - All data in `src/data.ts`, typed. Pages in `src/pages/`.
 - Must pass `tsc -b` with `noUnusedLocals` and `noUnusedParameters`.
@@ -99,7 +102,7 @@ Reference: https://www.twentytwo.in/ . Match the feel, not the brand.
 6. Dark CTA band linking to both screens.
 
 ### `/patient` Screen 1: What the patient sees
-Layout: scenario tabs on top, a persona bar (who, summary, playbook tag), then a two-column layout: a **phone mock** (360 x 720, notch, status bar) on the left with Back, step dots and Next below; on the right a **step card** (step n of N, time, "solves" tag, title, why), a **Behind the scenes** card (timestamped monospace system events) and a **This journey** timeline (clickable).
+Layout: scenario tabs on top, a persona bar (who, summary, playbook tag), then a two-column layout: a **stage** on the left (mist panel holding the patient's screen as a frameless card, a "solves" note, and Previous step / n of N / Next step); on the right a **step card** (step n of N, time, "solves" tag, title, why), a **Behind the scenes** card (timestamped monospace system events) and a **This journey** vertical stepper (numbered circles, done steps ticked, current step in indigo; each step is a button).
 
 Phone view kinds: `form` (HappySmile booking form with a consent checkbox that mentions calls, WhatsApp and the AI assistant), `thanks` (caller name, number, ETA, options Call me now / Pick a time / WhatsApp me instead, picked one highlighted), `whatsapp` (business chat with bubbles, quick-reply buttons, picked one ticked), `incoming` (verified business caller ID with call reason), `call` (dark header with waveform, transcript with labelled turns, green "✓" notes on lines that show a design rule, amber system line for handoffs).
 
