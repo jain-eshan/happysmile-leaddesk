@@ -15,13 +15,15 @@ export interface WaMessage {
   buttons?: string[];
   picked?: string;
   time: string;
+  /** Small grey line under the body, like a WhatsApp business template footer. */
+  footer?: string;
 }
 
 export type PhoneView =
   | { kind: 'form'; treatment: string; name: string; phone: string; clinic: string; note: string; time: string }
   | { kind: 'thanks'; agent: string; number: string; eta: string; options: string[]; picked: string }
-  | { kind: 'whatsapp'; messages: WaMessage[] }
-  | { kind: 'incoming'; label: string; reason: string; time: string }
+  | { kind: 'whatsapp'; day?: string; messages: WaMessage[] }
+  | { kind: 'incoming'; label: string; number: string; reason: string; time: string }
   | { kind: 'call'; title: string; duration: string; lines: ChatLine[] };
 
 export interface Step {
@@ -44,6 +46,7 @@ export interface Scenario {
 
 const AGENT = 'Meera';
 const NUMBER = '+91 124 400 2200';
+const DISCLOSE = 'Calls may be recorded and may be handled by our AI assistant.';
 
 export const scenarios: Scenario[] = [
   {
@@ -56,7 +59,7 @@ export const scenarios: Scenario[] = [
     steps: [
       {
         at: '1:12 pm',
-        label: 'Enquiry',
+        label: 'Existing form (unchanged)',
         phone: {
           kind: 'form',
           treatment: 'Clear aligners',
@@ -67,17 +70,17 @@ export const scenarios: Scenario[] = [
           time: '1:12 pm',
         },
         events: [
-          '1:12:04  Enquiry received from Instagram lead form',
+          '1:12:04  Enquiry received from website form (Instagram ad click)',
           '1:12:04  Phone matched: new patient, no history',
           '1:12:05  Playbook: Aligners and braces · Language guess: Hinglish',
-          '1:12:05  Consent captured with form submit (purpose: this enquiry only)',
+          '1:12:05  Form unchanged · AI and call recording disclosed in the WhatsApp heads-up',
         ],
-        why: 'Lead capture stays exactly as it is today. The system starts the moment the form is submitted.',
+        why: "HappySmile's current form, Meta lead form or Google lead form stays exactly as it is. Everything after submit is new.",
         solves: 'Ops head: no lead waits in a list',
       },
       {
         at: '1:12 pm',
-        label: 'Thank-you page',
+        label: 'Thank-you page (own website only)',
         phone: {
           kind: 'thanks',
           agent: AGENT,
@@ -87,7 +90,7 @@ export const scenarios: Scenario[] = [
           picked: 'Pick a time',
         },
         events: ['1:12:20  Thank-you page shows caller name, number and choices', '1:12:31  Riya picks “Pick a time”: 7:30 pm today'],
-        why: 'The patient sees who will call and from which number, and can choose when. 49% of Indians say they would answer more if they could schedule the call themselves.',
+        why: 'The patient sees who will call and from which number, and can choose when. 49% of Indians say they would answer more if they could schedule the call themselves. Only where HappySmile controls the page. For Meta and Google lead forms, the WhatsApp heads-up is the first touch.',
         solves: 'Patient: distrust of unknown numbers',
       },
       {
@@ -100,6 +103,7 @@ export const scenarios: Scenario[] = [
               from: 'clinic',
               time: '1:12 pm',
               text: `Hi Riya, this is HappySmile Dental. Thanks for asking about clear aligners. ${AGENT} from our team will call you at 7:30 pm today from ${NUMBER}. Save this number so you know it is us.`,
+              footer: DISCLOSE,
               buttons: ['Call me now instead', 'Change time'],
             },
           ],
@@ -111,7 +115,7 @@ export const scenarios: Scenario[] = [
       {
         at: '7:30 pm',
         label: 'Incoming call',
-        phone: { kind: 'incoming', label: 'HappySmile Dental', reason: 'Your aligner enquiry', time: '7:30 pm' },
+        phone: { kind: 'incoming', label: 'HappySmile Dental', number: NUMBER, reason: 'Your aligner enquiry', time: '7:30 pm' },
         events: ['7:30:00  Outbound call from declared number (TRAI A2P declared)', '7:30:00  Caller ID shows verified business name and call reason', '7:30:06  Answered'],
         why: 'A declared, branded number with a call reason. Spam-flagged numbers are the fastest way to waste a 2-minute response.',
         solves: 'Owner: number does not get flagged',
@@ -151,7 +155,7 @@ export const scenarios: Scenario[] = [
             {
               from: 'clinic',
               time: '7:34 pm',
-              text: 'Your free aligner scan is booked.\nThu, 7:30 pm · HappySmile Sector 29\nWith: Orthodontist\nBring: nothing, the scan takes 15 min\nReply 1 to confirm, 2 to change.',
+              text: '*Your free aligner scan is booked.*\nThu, 7:30 pm · HappySmile Sector 29\nWith: Orthodontist\nBring: nothing, the scan takes 15 min\nReply 1 to confirm, 2 to change.',
               buttons: ['1 Confirm', '2 Change'],
               picked: '1 Confirm',
             },
@@ -174,7 +178,7 @@ export const scenarios: Scenario[] = [
     steps: [
       {
         at: '11:05 am',
-        label: 'Enquiry',
+        label: 'Existing form (unchanged)',
         phone: {
           kind: 'form',
           treatment: 'Dental implants',
@@ -189,12 +193,12 @@ export const scenarios: Scenario[] = [
           '11:05:12  Phone matched: new · Value band: high (implants)',
           '11:05:13  Playbook: Implants · Decider likely the son',
         ],
-        why: 'The person filling the form is often not the patient. The implant playbook plans for both.',
+        why: "HappySmile's current form, Meta lead form or Google lead form stays exactly as it is. Everything after submit is new.",
         solves: 'Patient: decider not on the call',
       },
       {
         at: '11:05 am',
-        label: 'Thank-you page',
+        label: 'Thank-you page (own website only)',
         phone: {
           kind: 'thanks',
           agent: AGENT,
@@ -204,8 +208,26 @@ export const scenarios: Scenario[] = [
           picked: 'Call me now',
         },
         events: ['11:05:30  Karan picks “Call me now”'],
-        why: 'Inside calling hours and the user asked for a call, so the agent dials right away.',
+        why: 'Inside calling hours and the user asked for a call, so the agent dials right away. Only where HappySmile controls the page. For Meta and Google lead forms, the WhatsApp heads-up is the first touch.',
         solves: 'Ops head: speed when the patient wants it',
+      },
+      {
+        at: '11:05 am',
+        label: 'WhatsApp heads-up',
+        phone: {
+          kind: 'whatsapp',
+          messages: [
+            {
+              from: 'clinic',
+              time: '11:05 am',
+              text: `Hi Karan, this is HappySmile Dental. Thanks for asking about implants for your father. ${AGENT} from our team is calling you now from ${NUMBER}.`,
+              footer: DISCLOSE,
+            },
+          ],
+        },
+        events: ['11:05:31  WhatsApp heads-up sent from verified HappySmile business number', '11:05:32  Call placed: Karan asked for a call now'],
+        why: 'Even when the patient asks for a call right away, the WhatsApp lands first, so the number that rings is one he has just seen.',
+        solves: 'Patient: pickup rate',
       },
       {
         at: '11:06 am',
@@ -245,7 +267,7 @@ export const scenarios: Scenario[] = [
             {
               from: 'clinic',
               time: '11:10 am',
-              text: 'Implant consult booked for Mr. Suresh Sharma.\nSat, 10:30 am · HappySmile Sector 29\nWith: Dr. Nair (implant specialist)\nIncludes: 3D scan (₹2,000 to ₹4,000, adjusted in treatment)\nBring: current medicines list and any sugar reports\nForward this to family. Reply 1 to confirm.',
+              text: '*Implant consult booked for Mr. Suresh Sharma.*\nSat, 10:30 am · HappySmile Sector 29\nWith: Dr. Nair (implant specialist)\nIncludes: 3D scan (₹2,000 to ₹4,000, adjusted in treatment)\nBring: current medicines list and any sugar reports\nForward this to family. Reply 1 to confirm.',
               buttons: ['1 Confirm', 'Share with family'],
               picked: '1 Confirm',
             },
@@ -267,7 +289,7 @@ export const scenarios: Scenario[] = [
     steps: [
       {
         at: '8:41 am',
-        label: 'Enquiry',
+        label: 'Existing form (unchanged)',
         phone: {
           kind: 'form',
           treatment: 'Tooth pain / root canal',
@@ -278,8 +300,26 @@ export const scenarios: Scenario[] = [
           time: '8:41 am',
         },
         events: ['8:41:03  Enquiry from website', '8:41:03  Playbook: Pain · urgency high', '8:41:04  Clinics open at 9:00 · call allowed (patient-requested, service call)'],
-        why: 'Pain changes everything: the agent skips qualification and goes straight to the earliest slot.',
+        why: "HappySmile's current form, Meta lead form or Google lead form stays exactly as it is. Everything after submit is new.",
         solves: 'Patient: needs relief today',
+      },
+      {
+        at: '8:41 am',
+        label: 'WhatsApp heads-up',
+        phone: {
+          kind: 'whatsapp',
+          messages: [
+            {
+              from: 'clinic',
+              time: '8:41 am',
+              text: `Hi Arjun, sorry you are in pain. ${AGENT} from HappySmile is calling you in a minute from ${NUMBER} with today's earliest slots near you.`,
+              footer: DISCLOSE,
+            },
+          ],
+        },
+        events: ['8:41:05  WhatsApp heads-up sent · pain playbook: no time picker, call now', '8:42:00  Call placed'],
+        why: 'One message so he knows the next call is the clinic, then straight to the call. Nobody in pain should have to pick a time slot.',
+        solves: 'Patient: answers because he knows who is calling',
       },
       {
         at: '8:42 am',
@@ -309,7 +349,7 @@ export const scenarios: Scenario[] = [
             {
               from: 'clinic',
               time: '8:43 am',
-              text: 'Booked: today 9:45 am · HappySmile Sector 49\nMaps: happysmile.in/s49\nConsult fee ₹500, adjusted in treatment.\nRunning late? Reply LATE and we will hold the chair.',
+              text: '*Booked: today 9:45 am · HappySmile Sector 49*\nMaps: happysmile.in/s49\nConsult fee ₹500, adjusted in treatment.\nRunning late? Reply LATE and we will hold the chair.',
               buttons: ['Open map', 'LATE'],
             },
           ],
@@ -329,7 +369,7 @@ export const scenarios: Scenario[] = [
     steps: [
       {
         at: '10:05 pm',
-        label: 'Enquiry',
+        label: 'Existing form (unchanged)',
         phone: {
           kind: 'form',
           treatment: 'Braces for child',
@@ -340,7 +380,7 @@ export const scenarios: Scenario[] = [
           time: '10:05 pm',
         },
         events: ['22:05:40  Enquiry from website', '22:05:40  Outside calling hours (9 am to 9 pm) · no call', '22:05:41  After-hours rule: WhatsApp now, call at chosen time'],
-        why: 'No calls late at night. The patient still hears from us in seconds.',
+        why: "HappySmile's current form, Meta lead form or Google lead form stays exactly as it is. Everything after submit is new.",
         solves: 'Owner: no spam complaints, no late calls',
       },
       {
@@ -348,11 +388,13 @@ export const scenarios: Scenario[] = [
         label: 'WhatsApp now',
         phone: {
           kind: 'whatsapp',
+          day: 'Wednesday',
           messages: [
             {
               from: 'clinic',
               time: '10:05 pm',
               text: `Hi Neha, thanks for asking about braces for Ananya. It is late, so we will not call now. When can ${AGENT} from HappySmile call you? It takes about 5 minutes.`,
+              footer: DISCLOSE,
               buttons: ['Tomorrow 10 am', 'Tomorrow 5:30 pm', 'Other time'],
               picked: 'Tomorrow 5:30 pm',
             },
@@ -388,11 +430,12 @@ export const scenarios: Scenario[] = [
         label: 'Reminder',
         phone: {
           kind: 'whatsapp',
+          day: 'Friday',
           messages: [
             {
               from: 'clinic',
-              time: 'Fri 7:00 pm',
-              text: 'Reminder: Ananya\'s braces consult is tomorrow, 12:30 pm, HappySmile Golf Course Road.\nWhat happens: check-up, X-ray, options explained (about 45 min).\nNeed to change? Reply 2. We will offer the next Saturday.',
+              time: '7:00 pm',
+              text: '*Reminder:* Ananya\'s braces consult is tomorrow, 12:30 pm, HappySmile Golf Course Road.\nWhat happens: check-up, X-ray, options explained (about 45 min).\nNeed to change? Reply 2. We will offer the next Saturday.',
               buttons: ['See you tomorrow', '2 Change'],
               picked: 'See you tomorrow',
             },

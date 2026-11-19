@@ -1,23 +1,150 @@
 import { useEffect, useState } from 'react';
+import type { ReactNode } from 'react';
 import { scenarios } from '../data';
-import type { PhoneView } from '../data';
+import type { PhoneView, Scenario, WaMessage } from '../data';
+import { Icon, ic, initials } from '../icons';
 
-function channelLabel(view: PhoneView): { name: string; meta: string } {
+function Verified() {
+  return (
+    <span className="wa-verified" aria-label="Verified business">
+      <Icon d={ic.check} size={10} />
+    </span>
+  );
+}
+
+// WhatsApp formatting: *bold* and the clinic's own links.
+function waText(t: string): ReactNode[] {
+  return t.split(/(\*[^*\n]+\*|happysmile\.in\/\S+)/g).map((p, i) =>
+    p.length > 2 && p.startsWith('*') && p.endsWith('*') ? (
+      <b key={i}>{p.slice(1, -1)}</b>
+    ) : p.startsWith('happysmile.in/') ? (
+      <span key={i} className="wa-link">
+        {p}
+      </span>
+    ) : (
+      p
+    ),
+  );
+}
+
+type WaGroup = { day: string; messages: WaMessage[] };
+type WaItem = { kind: 'date'; label: string } | { kind: 'msg'; m: WaMessage; tail: boolean; quote?: string };
+
+// One WhatsApp thread per journey: every WhatsApp step up to now, with date chips and tapped replies.
+function waItems(thread: WaGroup[], today: string): WaItem[] {
+  const items: WaItem[] = [];
+  let lastDay = '';
+  let lastFrom = '';
+  const push = (m: WaMessage, quoted?: WaMessage) => {
+    items.push({ kind: 'msg', m, tail: m.from !== lastFrom, quote: quoted?.text.split('\n')[0].replace(/\*/g, '') });
+    lastFrom = m.from;
+  };
+  for (const g of thread) {
+    if (g.day !== lastDay) {
+      items.push({ kind: 'date', label: g.day === today ? 'Today' : g.day });
+      lastDay = g.day;
+      lastFrom = '';
+    }
+    g.messages.forEach((m, i) => {
+      const prev = g.messages[i - 1];
+      push(m, m.from === 'patient' && prev?.picked ? prev : undefined);
+      if (m.picked && g.messages[i + 1]?.from !== 'patient') push({ from: 'patient', text: m.picked, time: m.time }, m);
+    });
+  }
+  return items;
+}
+
+function WhatsApp({ thread, today }: { thread: WaGroup[]; today: string }) {
+  const items = waItems(thread, today);
+  return (
+    <div className="wa">
+      <div className="wa-head">
+        <Icon d={ic.back} size={22} />
+        <span className="wa-avatar" aria-hidden="true">
+          H
+        </span>
+        <div className="wa-title">
+          <b>
+            <span className="wa-name">HappySmile Dental</span> <Verified />
+          </b>
+          <small>Business account</small>
+        </div>
+        <Icon d={ic.video} size={22} />
+        <Icon d={ic.call} size={20} />
+        <Icon d={ic.more} size={22} />
+      </div>
+      <div className="wa-body">
+        {items.map((it, i) =>
+          it.kind === 'date' ? (
+            <div key={i} className="wa-chips">
+              <span className="wa-date">{it.label}</span>
+              {i === 0 && <span className="wa-notice">This business uses a secure service from Meta to manage this chat. Tap to learn more.</span>}
+            </div>
+          ) : (
+            <div key={i} className={'wa-msg ' + (it.m.from === 'clinic' ? 'in' : 'out') + (it.tail ? ' tail' : '')}>
+              <div className="wa-bubble">
+                {it.quote && (
+                  <div className="wa-quote">
+                    <b>HappySmile Dental</b>
+                    <span>{it.quote}</span>
+                  </div>
+                )}
+                <div className="wa-text">{waText(it.m.text)}</div>
+                {it.m.footer && <div className="wa-footer">{it.m.footer}</div>}
+                <span className="wa-meta">
+                  {it.m.time}
+                  {it.m.from === 'patient' && (
+                    <span className="wa-ticks" aria-label="Read">
+                      <Icon d={ic.ticks} size={16} />
+                    </span>
+                  )}
+                </span>
+              </div>
+              {it.m.buttons && (
+                <div className="wa-qr">
+                  {it.m.buttons.map((b) => (
+                    <span key={b}>
+                      <Icon d={/^Open/.test(b) ? ic.link : ic.reply} size={16} />
+                      {b}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ),
+        )}
+      </div>
+      <div className="wa-input" aria-hidden="true">
+        <div className="wa-field">
+          <Icon d={ic.smile} size={22} />
+          <span>Message</span>
+          <Icon d={ic.clip} size={21} />
+          <Icon d={ic.camera} size={21} />
+        </div>
+        <span className="wa-mic">
+          <Icon d={ic.mic} size={22} />
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function channelLabel(view: PhoneView): { icon: string; name: string } {
   switch (view.kind) {
     case 'form':
-      return { name: 'happysmile.in', meta: 'Website enquiry form' };
+      return { icon: ic.dashboard, name: 'HappySmile website' };
     case 'thanks':
-      return { name: 'happysmile.in', meta: 'After you submit' };
+      return { icon: ic.dashboard, name: 'HappySmile website' };
     case 'whatsapp':
-      return { name: 'HappySmile Dental ✓', meta: 'WhatsApp business account' };
+      return { icon: ic.chat, name: 'WhatsApp' };
     case 'incoming':
-      return { name: 'Incoming call', meta: 'Phone' };
+      return { icon: ic.call, name: 'Phone, ringing' };
     case 'call':
-      return { name: 'On a call', meta: 'Recorded for quality' };
+      return { icon: ic.call, name: 'Phone, on a call' };
   }
 }
 
-function Screen({ view }: { view: PhoneView }) {
+function Screen({ view, thread }: { view: PhoneView; thread: WaGroup[] }) {
   switch (view.kind) {
     case 'form':
       return (
@@ -37,18 +164,14 @@ function Screen({ view }: { view: PhoneView }) {
               <div className="v">{v}</div>
             </div>
           ))}
-          <div className="consent">
-            <i aria-hidden="true">✓</i>
-            <span>HappySmile may call and WhatsApp me about this enquiry, including through its AI assistant. Calls may be recorded.</span>
-          </div>
           <div className="fake-btn">Request a call back</div>
         </div>
       );
     case 'thanks':
       return (
         <div className="thanks">
-          <span className="tag ok" style={{ alignSelf: 'flex-start' }}>
-            <span className="dot" aria-hidden="true" /> Enquiry received
+          <span className="pill ok" style={{ alignSelf: 'flex-start' }}>
+            Enquiry received
           </span>
           <h3>We’ll call you {view.eta}.</h3>
           <div className="caller-card">
@@ -57,60 +180,56 @@ function Screen({ view }: { view: PhoneView }) {
             </div>
             <div>
               <b>{view.agent} from HappySmile</b>
-              <div className="muted" style={{ fontSize: 13 }}>
+              <div className="muted">
                 Calling from <span className="tabular">{view.number}</span>
               </div>
             </div>
           </div>
-          <div className="muted" style={{ fontSize: 13 }}>
-            Not a good time? Choose what works for you.
-          </div>
+          <div className="muted">Not a good time? Choose what works for you.</div>
           {view.options.map((o) => (
             <div key={o} className={'opt' + (o === view.picked ? ' on' : '')}>
               {o === view.picked ? '✓ ' : ''}
               {o}
             </div>
           ))}
-          <div className="muted" style={{ fontSize: 12, marginTop: 'auto' }}>
+          <div className="muted small" style={{ marginTop: 'auto' }}>
             We’ll also send this on WhatsApp so you can save the number.
           </div>
         </div>
       );
     case 'whatsapp':
-      return (
-        <div className="wa-body">
-          {view.messages.map((m, i) => (
-            <div key={i} className={'bubble ' + m.from}>
-              {m.text}
-              <time>{m.time}</time>
-              {m.buttons && (
-                <div className="wa-btns">
-                  {m.buttons.map((b) => (
-                    <span key={b} className={b === m.picked ? 'on' : ''}>
-                      {b === m.picked ? '✓ ' : ''}
-                      {b}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      );
+      return <WhatsApp thread={thread} today={view.day ?? 'Today'} />;
     case 'incoming':
       return (
         <div className="incoming">
           <div>
+            <div className="inc-label">Incoming call</div>
             <div className="big" aria-hidden="true">
               H
             </div>
             <h3>{view.label}</h3>
-            <div className="verified">✓ Verified business</div>
-            <div className="reason">Call reason: {view.reason}</div>
+            <div className="inc-num tabular">{view.number}</div>
+            <div className="verified">
+              <Verified /> Verified business
+            </div>
+            <div className="reason">
+              <small>Reason for call</small>
+              {view.reason}
+            </div>
           </div>
           <div className="call-btns" aria-hidden="true">
-            <span style={{ background: '#b42318' }}>Decline</span>
-            <span style={{ background: '#15803d' }}>Accept</span>
+            <div>
+              <span className="decline">
+                <Icon d={ic.callEnd} size={28} />
+              </span>
+              Decline
+            </div>
+            <div>
+              <span className="accept">
+                <Icon d={ic.call} size={26} />
+              </span>
+              Answer
+            </div>
           </div>
         </div>
       );
@@ -140,6 +259,16 @@ function Screen({ view }: { view: PhoneView }) {
   }
 }
 
+function threadUpTo(sc: Scenario, idx: number): WaGroup[] {
+  return sc.steps.slice(0, idx + 1).flatMap((st) => (st.phone.kind === 'whatsapp' ? [{ day: st.phone.day ?? 'Today', messages: st.phone.messages }] : []));
+}
+
+// "1:12:04  Enquiry received" -> time and text. Lines without a time keep the whole text.
+function splitEvent(e: string) {
+  const m = e.match(/^(.+?)\s{2,}(.+)$/);
+  return m ? { t: m[1], x: m[2] } : { t: '', x: e };
+}
+
 export default function Patient() {
   const [sid, setSid] = useState(scenarios[0].id);
   const [idx, setIdx] = useState(0);
@@ -161,100 +290,120 @@ export default function Patient() {
 
   return (
     <main className="page" id="main">
-      <div className="screen-head">
+      <header className="page-head">
         <div>
-          <span className="tag accent">Screen 1 · The moment someone asks to be contacted</span>
-          <h1 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', marginTop: 14 }}>What the patient sees</h1>
-          <p>Pick a patient, then step through what reaches their phone and what the system does behind it.</p>
+          <p className="crumb">Screen 1 · The moment someone asks to be contacted</p>
+          <h1>Patient view</h1>
+          <p className="sub">Pick a patient, then step through what reaches their phone and what the system does behind it.</p>
         </div>
-      </div>
+      </header>
 
-      <div className="chips" role="group" aria-label="Choose a patient journey" style={{ marginBottom: 16 }}>
+      <div className="tabs" role="group" aria-label="Choose a patient">
         {scenarios.map((s) => (
-          <button key={s.id} className="chip" aria-pressed={s.id === sid} onClick={() => {
+          <button
+            key={s.id}
+            className="tab"
+            aria-pressed={s.id === sid}
+            onClick={() => {
               setSid(s.id);
               setIdx(0);
-            }}>
+            }}
+          >
             {s.tab}
           </button>
         ))}
       </div>
 
-      <div className="card persona-bar">
-        <b>{sc.persona}</b>
-        <span className="tag dark">Playbook: {sc.playbook}</span>
-        <p>{sc.summary}</p>
-      </div>
+      <section className="card persona" aria-label="Patient">
+        <span className="avatar lg" aria-hidden="true">
+          {initials(sc.persona)}
+        </span>
+        <div>
+          <b>{sc.persona}</b>
+          <p>{sc.summary}</p>
+        </div>
+        <span className="pill accent">Playbook: {sc.playbook}</span>
+      </section>
 
       <div className="journey">
-        <section className="stage" aria-label="Patient's phone">
-          <div className="device">
-            <div className="channel">
-              <b>{ch.name}</b>
-              <span>{ch.meta}</span>
-              <span className="tabular">{step.at}</span>
-            </div>
-            <Screen view={step.phone} />
-          </div>
-          <div className="stage-note">
-            <span className="ok-mark" aria-hidden="true">
-              ✓
+        <nav className="card steps" aria-label="Steps in this journey">
+          <div className="card-h">
+            <h2>Journey</h2>
+            <span className="muted tabular">
+              {idx + 1} of {sc.steps.length}
             </span>
-            <span>{step.solves}</span>
           </div>
-          <div className="stage-nav">
-            <button className="btn light sm" onClick={() => setIdx(Math.max(idx - 1, 0))} disabled={idx === 0}>
-              Previous step
+          <ol>
+            {sc.steps.map((s, i) => (
+              <li key={s.label + i}>
+                <button
+                  className="step-btn"
+                  aria-current={i === idx ? 'step' : undefined}
+                  data-state={i < idx ? 'done' : i === idx ? 'current' : 'todo'}
+                  onClick={() => setIdx(i)}
+                >
+                  <span className="circle">{i < idx ? <Icon d={ic.check} size={14} /> : i + 1}</span>
+                  <span className="step-name">{s.label}</span>
+                  <span className="step-time tabular">{s.at}</span>
+                </button>
+              </li>
+            ))}
+          </ol>
+          <div className="step-nav">
+            <button className="btn" onClick={() => setIdx(Math.max(idx - 1, 0))} disabled={idx === 0}>
+              <Icon d={ic.chevronLeft} size={18} />
+              Previous
             </button>
-            <span className="tabular" aria-live="polite">
-              {idx + 1} / {sc.steps.length}
-            </span>
-            <button className="btn sm" onClick={() => setIdx(Math.min(idx + 1, last))} disabled={idx === last}>
+            <button className="btn primary" onClick={() => setIdx(Math.min(idx + 1, last))} disabled={idx === last}>
               Next step
+              <Icon d={ic.chevronRight} size={18} />
             </button>
+          </div>
+          <p className="hint">Or use the left and right arrow keys.</p>
+        </nav>
+
+        <section className="stage" aria-label="What the patient sees on their phone">
+          <div className="stage-label">
+            <Icon d={ch.icon} size={16} />
+            {ch.name}
+            <span className="tabular">{step.at}</span>
+          </div>
+          <div className="device">
+            <Screen view={step.phone} thread={threadUpTo(sc, idx)} />
           </div>
         </section>
 
-        <div className="side">
-          <div className="card step-card">
-            <div className="row">
-              <span className="eyebrow tabular">
-                Step {idx + 1} of {sc.steps.length} · {step.at}
-              </span>
-            </div>
+        <section className="card step-card" aria-live="polite">
+            <span className="crumb tabular">
+              Step {idx + 1} of {sc.steps.length} · {step.at}
+            </span>
             <h2>{step.label}</h2>
             <p>{step.why}</p>
-          </div>
+            <div className="solves">
+              <Icon d={ic.checkCircle} size={16} />
+              <span>
+                <b>Solves:</b> {step.solves}
+              </span>
+            </div>
+          </section>
 
-          <div className="card events">
-            <div className="eyebrow">Behind the scenes</div>
-            <ol>
-              {step.events.map((e) => (
-                <li key={e}>{e}</li>
-              ))}
-            </ol>
-          </div>
-
-          <nav className="card steps" aria-label="Steps in this journey">
-            <div className="eyebrow">This journey</div>
-            <ol>
-              {sc.steps.map((s, i) => (
-                <li key={s.label + i}>
-                  <button
-                    className="step-btn"
-                    aria-current={i === idx ? 'step' : undefined}
-                    data-state={i < idx ? 'done' : i === idx ? 'current' : 'todo'}
-                    onClick={() => setIdx(i)}
-                  >
-                    <span className="circle">{i < idx ? '✓' : i + 1}</span>
-                    <span className="step-name">{s.label}</span>
-                    <span className="step-time">{s.at}</span>
-                  </button>
-                </li>
-              ))}
-            </ol>
-          </nav>
-        </div>
+          <section className="card sys-card" aria-labelledby="sys-h">
+            <div className="card-h">
+              <h2 id="sys-h">What the system did</h2>
+            </div>
+            <ul className="events">
+              {step.events.map((e) => {
+                const { t, x } = splitEvent(e);
+                return (
+                  <li key={e}>
+                    <Icon d={ic.checkCircle} size={16} />
+                    <span>{x}</span>
+                    {t && <time className="tabular">{t}</time>}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
       </div>
     </main>
   );

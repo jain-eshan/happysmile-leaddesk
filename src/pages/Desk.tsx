@@ -1,8 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import type { ReactNode } from 'react';
 import { experiment, kpis, leads, priceBands, statusMeta } from '../data';
 import type { Lead, LeadStatus } from '../data';
+import { Icon, ic, initials } from '../icons';
 
 type Filter = 'all' | LeadStatus;
+type Clinic = 'All' | 'Sector 29' | 'Golf Course Rd';
 
 const filters: { id: Filter; label: string }[] = [
   { id: 'needs_you', label: 'Needs you' },
@@ -12,6 +15,8 @@ const filters: { id: Filter; label: string }[] = [
   { id: 'booked', label: 'Booked' },
   { id: 'all', label: 'All' },
 ];
+
+const matches = (l: Lead, f: Filter) => f === 'all' || l.status === f || (f === 'booked' && l.status === 'whatsapp_only');
 
 function Rules({ onClose }: { onClose: () => void }) {
   const [rules, setRules] = useState<Record<string, boolean>>({
@@ -23,6 +28,9 @@ function Rules({ onClose }: { onClose: () => void }) {
     disclosureTest: true,
     cleaningWa: true,
     teenParent: true,
+    aligners: true,
+    implantsPb: true,
+    pain: true,
   });
   const flip = (k: string) => setRules((r) => ({ ...r, [k]: !r[k] }));
   useEffect(() => {
@@ -30,181 +38,173 @@ function Rules({ onClose }: { onClose: () => void }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
-  const Row = ({ k, label }: { k: string; label: string }) => (
+  const row = (k: string, label: string, note?: string) => (
+    <div className="toggle-row" key={k}>
+      <span id={'lbl-' + k}>
+        {label}
+        {note && <small className="row-note">{note}</small>}
+      </span>
+      <button className="switch" role="switch" aria-checked={note ? false : rules[k]} aria-labelledby={'lbl-' + k} disabled={!!note} onClick={() => flip(k)} />
+    </div>
+  );
+  const fixed = (label: string, value: ReactNode) => (
     <div className="toggle-row">
-      <span id={'lbl-' + k}>{label}</span>
-      <button className="switch" role="switch" aria-checked={rules[k]} aria-labelledby={'lbl-' + k} onClick={() => flip(k)} />
+      <span>{label}</span>
+      {value}
     </div>
   );
   return (
     <>
       <button className="drawer-bg" aria-label="Close rules" onClick={onClose} />
-      <aside className="drawer" role="dialog" aria-modal="true" aria-label="Rules">
+      <aside className="drawer" role="dialog" aria-modal="true" aria-labelledby="rules-h">
         <div className="drawer-head">
           <div>
-            <div className="eyebrow">Settings · owned by the front-desk lead</div>
-            <h2 style={{ marginTop: 6 }}>Rules</h2>
+            <p className="crumb">Owned by the front-desk lead</p>
+            <h2 id="rules-h">Rules</h2>
           </div>
-          <button className="btn light sm" onClick={onClose} autoFocus>
-            Close rules
+          <button className="icon-btn" onClick={onClose} autoFocus aria-label="Close rules">
+            <Icon d={ic.close} size={20} />
           </button>
         </div>
-        <p className="muted" style={{ marginTop: 8 }}>
-          No workflow builder in the pilot. These are the only knobs, and the front-desk lead signs them off.
-        </p>
+        <p className="muted">No workflow builder in the pilot. These are the only settings, and the front-desk lead signs them off.</p>
 
-        <div className="card rule">
+        <section className="rule">
           <h3>Calling hours</h3>
-          <div className="toggle-row">
-            <span>Call window</span>
-            <b>9:00 am to 9:00 pm</b>
-          </div>
-          <div className="toggle-row">
-            <span>Outside the window</span>
-            <b>WhatsApp now, call at chosen time</b>
-          </div>
-          <div className="toggle-row">
-            <span>Attempts before stopping</span>
-            <b>3 calls over 24 h</b>
-          </div>
-        </div>
+          {fixed('Call window', <b>9:00 am to 9:00 pm</b>)}
+          {fixed('Outside the window', <b>WhatsApp now, call at chosen time</b>)}
+          {fixed('Attempts before stopping', <b>3 calls over 24 h</b>)}
+        </section>
 
-        <div className="card rule">
+        <section className="rule">
           <h3>Hand to the front desk when</h3>
-          <Row k="clinical" label="Patient asks a clinical question" />
-          <Row k="price" label="Patient negotiates on price" />
-          <Row k="implants" label="Implant or full-arch lead (human closes)" />
-          <Row k="human" label="Patient asks for a person" />
-          <Row k="confused" label="Agent misunderstands twice" />
-        </div>
+          {row('clinical', 'Patient asks a clinical question')}
+          {row('price', 'Patient negotiates on price')}
+          {row('implants', 'Implant or full-arch lead (a person closes)')}
+          {row('human', 'Patient asks for a person')}
+          {row('confused', 'Agent misunderstands twice')}
+        </section>
 
-        <div className="card rule">
+        <section className="rule">
           <h3>Playbooks</h3>
-          <div className="toggle-row">
-            <span>Aligners and braces · Implants · Tooth pain</span>
-            <span className="tag ok">Live</span>
-          </div>
-          <Row k="teenParent" label="Teen braces: invite both parents, prefer weekends" />
-          <Row k="cleaningWa" label="Cleaning: WhatsApp only, no call" />
-          <div className="toggle-row">
-            <span>Wedding smile (date-bound)</span>
-            <span className="tag grey">Next</span>
-          </div>
-        </div>
+          {row('aligners', 'Aligners and braces')}
+          {row('implantsPb', 'Implants (a person closes)')}
+          {row('pain', 'Tooth pain (book first, ask later)')}
+          {row('teenParent', 'Teen braces: invite both parents, prefer weekends')}
+          {row('cleaningWa', 'Cleaning: WhatsApp only, no call')}
+          {row('wedding', 'Wedding smile (date-bound)', 'Next phase, not in the pilot')}
+        </section>
 
-        <div className="card rule">
+        <section className="rule">
           <h3>AI disclosure</h3>
-          <div className="toggle-row">
-            <span>Never deny being AI when asked</span>
-            <span className="tag dark">Always on</span>
-          </div>
-          <Row k="disclosureTest" label="Test: say it upfront on 50% of calls" />
-        </div>
+          {fixed('Never deny being AI when asked', <span className="pill accent">Always on</span>)}
+          {row('disclosureTest', 'Test: say it upfront on 50% of calls')}
+        </section>
 
-        <div className="card rule">
-          <h3>Approved price bands (the agent may only say these)</h3>
+        <section className="rule">
+          <h3>Approved price bands</h3>
+          <p className="muted small">The agent may only say these.</p>
           <div className="table-wrap">
-          <table className="bands">
-            <thead>
-              <tr>
-                <th>Treatment</th>
-                <th>Band</th>
-                <th>Extras said upfront</th>
-                <th>EMI</th>
-              </tr>
-            </thead>
-            <tbody>
-              {priceBands.map((p) => (
-                <tr key={p.treatment}>
-                  <td>{p.treatment}</td>
-                  <td>{p.band}</td>
-                  <td className="muted">{p.extras}</td>
-                  <td>{p.emi}</td>
+            <table className="table compact">
+              <thead>
+                <tr>
+                  <th>Treatment</th>
+                  <th>Band</th>
+                  <th>Extras said upfront</th>
+                  <th>EMI</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {priceBands.map((p) => (
+                  <tr key={p.treatment}>
+                    <td>{p.treatment}</td>
+                    <td className="tabular">{p.band}</td>
+                    <td className="muted">{p.extras}</td>
+                    <td>{p.emi}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <p className="muted" style={{ fontSize: 12, marginTop: 8 }}>
-            Final price always after the exam. Signed off by the clinical lead.
-          </p>
-        </div>
+          <p className="muted small">Final price always after the exam. Signed off by the clinical lead.</p>
+        </section>
       </aside>
     </>
+  );
+}
+
+function Fact({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="fact">
+      <dt>{k}</dt>
+      <dd>{v}</dd>
+    </div>
   );
 }
 
 function Detail({ lead }: { lead: Lead }) {
   const s = statusMeta[lead.status];
   return (
-    <div className="card detail">
+    <section className="card detail" id="lead-detail" aria-label={'Lead ' + lead.name}>
       <div className="detail-top">
-        <div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            <span className={'tag ' + s.tone}>{s.label}</span>
-            <span className="tag grey">{lead.group}</span>
-            <span className="muted" style={{ fontSize: 13 }}>
-              {lead.id}
-            </span>
+        <span className="avatar lg" aria-hidden="true">
+          {initials(lead.name)}
+        </span>
+        <div className="detail-id">
+          <div className="pills">
+            <span className={'pill ' + s.tone}>{s.label}</span>
+            <span className="pill grey">{lead.group}</span>
+            <span className="muted small tabular">{lead.id}</span>
           </div>
           <h2>{lead.name}</h2>
-          <div className="muted" style={{ fontSize: 14 }}>
+          <p className="muted small">
             {lead.treatment} · {lead.clinic} · {lead.source} · enquired {lead.enquired}
-          </div>
+          </p>
         </div>
-        <div className="detail-actions">
-          <button className="btn sm">Call {lead.name.split(' ')[0]}</button>
-          <button className="btn light sm">Send WhatsApp</button>
-          <button className="btn light sm">Mark as handled</button>
-        </div>
+      </div>
+      <div className="detail-actions">
+        <button className="btn primary">
+          <Icon d={ic.call} size={16} />
+          Call {lead.name.match(/via \w+ (\w+)\)/)?.[1] ?? lead.name.split(' ')[0]}
+        </button>
+        <button className="btn">
+          <Icon d={ic.chat} size={16} />
+          Send WhatsApp
+        </button>
+        <button className="btn">
+          <Icon d={ic.check} size={16} />
+          Mark as handled
+        </button>
       </div>
 
       <div className="next-box">
-        <div className="eyebrow">Next best action · {lead.reason}</div>
-        <p>{lead.next}</p>
+        <Icon d={ic.bolt} size={18} />
+        <div>
+          <span className="label">Next best action · {lead.reason}</span>
+          <p>{lead.next}</p>
+        </div>
       </div>
 
-      <div className="facts">
-        <div className="fact">
-          <div className="k">Decider</div>
-          <div className="v">{lead.decider}</div>
-        </div>
-        <div className="fact">
-          <div className="k">Main worry</div>
-          <div className="v">{lead.worry}</div>
-        </div>
-        <div className="fact">
-          <div className="k">Value</div>
-          <div className="v">{lead.value}</div>
-        </div>
-        <div className="fact">
-          <div className="k">First contact</div>
-          <div className="v">{lead.firstContact}</div>
-        </div>
-        <div className="fact">
-          <div className="k">Booking</div>
-          <div className="v">{lead.slot ?? 'Not booked'}</div>
-        </div>
-        <div className="fact">
-          <div className="k">Credited to</div>
-          <div className="v">{lead.credited}</div>
-        </div>
-      </div>
+      <dl className="facts">
+        <Fact k="Decider" v={lead.decider} />
+        <Fact k="Main worry" v={lead.worry} />
+        <Fact k="Value" v={lead.value} />
+        <Fact k="First contact" v={lead.firstContact} />
+        <Fact k="Booking" v={lead.slot ?? 'Not booked'} />
+        <Fact k="Credited to" v={lead.credited} />
+      </dl>
 
       <div className="summary">
-        <div className="eyebrow">What the patient already told us</div>
+        <span className="label">What the patient already told us</span>
         <p>{lead.summary}</p>
-        <p className="muted" style={{ fontSize: 12.5, marginTop: 6 }}>
-          Language: {lead.language}. Open with this so the patient never repeats themselves.
-        </p>
+        <p className="muted small">Language: {lead.language}. Open with this so the patient never repeats themselves.</p>
       </div>
 
       {lead.transcript.length > 0 && (
-        <div>
-          <div className="eyebrow">From the call</div>
+        <div className="summary">
+          <span className="label">From the call</span>
           <div className="snip">
             {lead.transcript.map((l, i) => (
-              <div key={i} className={'line ' + l.who} style={{ maxWidth: '100%' }}>
+              <div key={i} className={'line ' + l.who}>
                 <div className="who">{l.who === 'agent' ? 'Meera (AI)' : l.name ?? 'Patient'}</div>
                 <div className="txt">{l.text}</div>
               </div>
@@ -212,157 +212,167 @@ function Detail({ lead }: { lead: Lead }) {
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }
 
 export default function Desk() {
-  const [clinic, setClinic] = useState<'All' | 'Sector 29' | 'Golf Course Rd'>('All');
-  const [filter, setFilter] = useState<Filter>('needs_you');
+  const [clinic, setClinic] = useState<Clinic>('All');
+  const [filter, setFilter] = useState<Filter>('all');
   const [selected, setSelected] = useState<string>('L-2041');
   const [rulesOpen, setRulesOpen] = useState(false);
 
   const scoped = useMemo(() => leads.filter((l) => clinic === 'All' || l.clinic === clinic), [clinic]);
-  const visible = useMemo(
-    () => scoped.filter((l) => filter === 'all' || l.status === filter || (filter === 'booked' && l.status === 'whatsapp_only')).sort((a, b) => b.priority - a.priority),
-    [scoped, filter],
-  );
-  const count = (f: Filter) => scoped.filter((l) => f === 'all' || l.status === f || (f === 'booked' && l.status === 'whatsapp_only')).length;
+  const visible = useMemo(() => scoped.filter((l) => matches(l, filter)).sort((a, b) => b.priority - a.priority), [scoped, filter]);
   const lead = scoped.find((l) => l.id === selected) ?? visible[0] ?? scoped[0];
+
+  const tiles = [
+    { icon: ic.inbox, l: 'Enquiries today', v: String(kpis.enquiries), s: `${kpis.aiGroup} AI-first · ${kpis.control} control` },
+    { icon: ic.clock, l: 'Median time to first contact', v: kpis.medianFirstContact, s: `Control: ${kpis.controlFirstContact}` },
+    { icon: ic.call, l: 'Calls answered', v: kpis.answered, s: 'With WhatsApp heads-up and verified ID' },
+    { icon: ic.calendar, l: 'Booked a consult', v: kpis.bookedAi, s: `Control: ${kpis.bookedControl}` },
+    { icon: ic.people, l: 'Handoff wait (median)', v: kpis.queueWait, s: 'Target under 30 min' },
+  ];
 
   return (
     <main className="page" id="main">
-      <div className="screen-head">
+      <header className="page-head">
         <div>
-          <span className="tag accent">Screen 2 · What HappySmile sees afterwards</span>
-          <h1 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', marginTop: 14 }}>Front-desk queue</h1>
-          <p>Every enquiry in one place, ranked by what needs a person now. The agent books routine consults; your team closes the rest.</p>
+          <p className="crumb">Screen 2 · What HappySmile sees afterwards</p>
+          <h1>Front desk · Today</h1>
+          <p className="sub">Every enquiry in one place, ranked by what needs a person now.</p>
         </div>
-        <div className="desk-controls">
-          <div className="seg">
+        <div className="head-actions">
+          <span className="pill warn">Pilot · illustrative data</span>
+          <div className="seg" role="group" aria-label="Clinic">
             {(['All', 'Sector 29', 'Golf Course Rd'] as const).map((c) => (
               <button key={c} aria-pressed={clinic === c} onClick={() => setClinic(c)}>
                 {c}
               </button>
             ))}
           </div>
-          <button className="btn light sm" onClick={() => setRulesOpen(true)}>
+          <button className="btn" onClick={() => setRulesOpen(true)}>
+            <Icon d={ic.tune} size={16} />
             Open rules
           </button>
-          <span className="tag warn">Pilot · illustrative data</span>
         </div>
-      </div>
+      </header>
 
-      <div className="kpis">
-        <div className="card kpi">
-          <div className="l">Enquiries today</div>
-          <div className="v">{kpis.enquiries}</div>
-          <div className="c">
-            {kpis.aiGroup} AI-first · {kpis.control} control
+      <section className="kpis" aria-label="Today in numbers">
+        {tiles.map((t) => (
+          <div className="card stat" key={t.l}>
+            <span className="stat-icon">
+              <Icon d={t.icon} size={18} />
+            </span>
+            <span className="stat-l">{t.l}</span>
+            <b className="stat-v">{t.v}</b>
+            <span className="stat-s">{t.s}</span>
           </div>
-        </div>
-        <div className="card kpi">
-          <div className="l">Median time to first contact</div>
-          <div className="v">{kpis.medianFirstContact}</div>
-          <div className="c">Control: {kpis.controlFirstContact}</div>
-        </div>
-        <div className="card kpi">
-          <div className="l">Calls answered</div>
-          <div className="v">{kpis.answered}</div>
-          <div className="c">With WhatsApp heads-up + verified ID</div>
-        </div>
-        <div className="card kpi">
-          <div className="l">Booked a consult</div>
-          <div className="v">{kpis.bookedAi}</div>
-          <div className="c">Control: {kpis.bookedControl}</div>
-        </div>
-        <div className="card kpi">
-          <div className="l">Handoff wait (median)</div>
-          <div className="v">{kpis.queueWait}</div>
-          <div className="c">Target under 30 min</div>
-        </div>
-      </div>
+        ))}
+      </section>
 
       <div className="desk">
-        <div className="card queue">
-          <div className="queue-tabs" role="group" aria-label="Filter the queue">
+        <section className="card queue" aria-labelledby="queue-h">
+          <div className="card-h">
+            <h2 id="queue-h">Queue</h2>
+            <span className="muted small">Sorted by priority</span>
+          </div>
+          <div className="filters" role="group" aria-label="Filter the queue">
             {filters.map((f) => (
               <button key={f.id} aria-pressed={filter === f.id} onClick={() => setFilter(f.id)}>
                 {f.label}
-                <span className="count">{count(f.id)}</span>
+                <span className="count">{scoped.filter((l) => matches(l, f.id)).length}</span>
               </button>
             ))}
           </div>
-          {visible.length === 0 && <div className="empty">Nothing waiting here. Switch to All to see every enquiry.</div>}
+          {visible.length === 0 && <div className="empty">Nothing waiting here. Choose All to see every enquiry.</div>}
           <ul className="lead-list">
-          {visible.map((l) => {
-            const s = statusMeta[l.status];
-            return (
-              <li key={l.id}>
-              <button className="lead" aria-current={lead && l.id === lead.id ? 'true' : undefined} onClick={() => setSelected(l.id)}>
-                <div className="top">
-                  <span className="nm">{l.name}</span>
-                  <span className={'tag ' + s.tone}>{s.label}</span>
-                </div>
-                <div className="why">{l.reason}</div>
-                <div className="meta">
-                  <span>{l.treatment}</span>
-                  <span>{l.clinic}</span>
-                  <span>{l.enquired}</span>
-                  <span className="prio">Priority {l.priority}</span>
-                </div>
-              </button>
-              </li>
-            );
-          })}
+            {visible.map((l) => {
+              const s = statusMeta[l.status];
+              return (
+                <li key={l.id}>
+                  <button
+                    className="lead"
+                    aria-current={lead && l.id === lead.id ? 'true' : undefined}
+                    onClick={() => {
+                      setSelected(l.id);
+                      if (window.matchMedia('(max-width: 1100px)').matches) document.getElementById('lead-detail')?.scrollIntoView({ block: 'start' });
+                    }}
+                  >
+                    <span className="avatar" aria-hidden="true">
+                      {initials(l.name)}
+                    </span>
+                    <span className="lead-main">
+                      <span className="lead-top">
+                        <span className="nm">{l.name}</span>
+                        <span className={'pill ' + s.tone}>{s.label}</span>
+                      </span>
+                      <span className="why">{l.reason}</span>
+                      <span className="meta">
+                        {l.treatment} · {l.clinic} · <span className="tabular">{l.enquired}</span>
+                        <span className="prio tabular" title="Priority score">
+                          P{l.priority}
+                        </span>
+                      </span>
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
-        </div>
+        </section>
 
-        <div>
-          {lead && <Detail lead={lead} />}
-          <div className="card exp">
-            <div className="exp-head">
-              <div>
-                <div className="eyebrow">Experiment · pilot week 2</div>
-                <h3 style={{ marginTop: 4 }}>AI-first vs today's process</h3>
-              </div>
-              <span className="muted" style={{ fontSize: 12.5 }}>
-                20% of enquiries randomly kept on the current callback
-              </span>
-            </div>
-            {experiment.map((e, i) => (
-              <div className={'exp-row' + (i === experiment.length - 1 ? ' key' : '')} key={e.metric}>
-                <div className="metric" style={{ fontSize: 14 }}>{e.metric}</div>
+        {lead && <Detail lead={lead} />}
+      </div>
+
+      <section className="card exp" aria-labelledby="exp-h">
+        <div className="card-h">
+          <div>
+            <h2 id="exp-h">
+              <Icon d={ic.flask} size={18} />
+              AI-first vs today’s process
+            </h2>
+            <p className="muted small">Pilot week 2 · 20% of enquiries randomly kept on the current 4 to 6 hour callback</p>
+          </div>
+          <span className="legend">
+            <i className="sw ai" /> AI-first <i className="sw ctl" /> Control
+          </span>
+        </div>
+        <div className="exp-grid">
+          {experiment.map((e, i) => {
+            const key = i === experiment.length - 1;
+            return (
+              <div className={'exp-row' + (key ? ' key' : '')} key={e.metric}>
+                <div className="exp-metric">
+                  {key && <span className="pill accent">Success metric</span>}
+                  <b>{e.metric}</b>
+                </div>
                 <div className="bars">
                   <div className="bar">
-                    <span>AI-first</span>
                     <div className="track">
                       <div className="fill" style={{ width: `${e.ai}%` }} />
                     </div>
-                    <b>
+                    <b className="tabular">
                       {e.ai}
                       {e.unit}
                     </b>
                   </div>
                   <div className="bar ctl">
-                    <span className="muted">Control</span>
                     <div className="track">
                       <div className="fill" style={{ width: `${e.control}%` }} />
                     </div>
-                    <span>
+                    <span className="tabular">
                       {e.control}
                       {e.unit}
                     </span>
                   </div>
                 </div>
               </div>
-            ))}
-            <p className="muted" style={{ fontSize: 12.5, marginTop: 10 }}>
-              The last row is the success metric. Share of calls handled without a human is deliberately not shown.
-            </p>
-          </div>
+            );
+          })}
         </div>
-      </div>
+        <p className="muted small">Share of calls the AI completes without a human is deliberately not shown: chasing it cuts the handoffs that close implant leads.</p>
+      </section>
 
       {rulesOpen && <Rules onClose={() => setRulesOpen(false)} />}
     </main>
