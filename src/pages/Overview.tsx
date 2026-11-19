@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Icon, ic } from '../icons';
+import { DemoPlayer, ShareButtons } from './Video';
 
 const stats = [
   { icon: ic.inbox, v: '300', l: 'Enquiries a day', s: '₹100 to ₹300 each in ad spend' },
@@ -71,6 +72,25 @@ export default function Overview() {
           HappySmile pays for about 300 enquiries a day. The front desk calls back 4 to 6 hours later and 30% book. Speed alone will not fix
           it: the call has to be answered, trusted and useful, and someone has to own the lead afterwards.
         </p>
+      </section>
+
+      <section className="card video-block" aria-labelledby="video-h">
+        <DemoPlayer />
+        <div className="video-copy">
+          <span className="label">Demo video</span>
+          <h2 id="video-h">Watch the walkthrough</h2>
+          <p>
+            The problem, the four patient journeys and the front desk, in one short video with voice and captions. Then try the two screens
+            yourself.
+          </p>
+          <div className="head-actions">
+            <Link to="/video" className="btn primary">
+              <Icon d={ic.play} size={16} />
+              Open video page
+            </Link>
+            <ShareButtons />
+          </div>
+        </div>
       </section>
 
       <section className="stat-grid" aria-label="The problem in numbers">

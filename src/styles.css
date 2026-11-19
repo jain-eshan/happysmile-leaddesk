@@ -223,6 +223,14 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .next-link small { color: var(--text-muted); font-size: var(--t-sm); }
 .next-link > .icon { color: var(--text-muted); }
 
+/* ---------- Demo video ---------- */
+.player { display: block; width: 100%; aspect-ratio: 16 / 9; background: var(--gray-950); border-radius: var(--r-sm); }
+.video-card { padding: var(--s-3); }
+.video-block { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--s-6); align-items: center; padding: var(--s-4); }
+.video-copy { display: flex; flex-direction: column; gap: var(--s-2); }
+.video-copy h2 { font-size: var(--t-xl); letter-spacing: -0.015em; }
+.video-copy p { color: var(--text-2); margin-bottom: var(--s-2); }
+
 /* ---------- Patient view ---------- */
 .persona { display: flex; align-items: center; gap: var(--s-4); padding: var(--s-4) var(--s-5); }
 .persona > div { flex: 1; min-width: 0; }
@@ -476,14 +484,15 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .grid-3, .stake-grid { grid-template-columns: minmax(0, 1fr); }
   .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .thesis { grid-template-columns: minmax(0, 1fr); gap: var(--s-3); }
+  .video-block { grid-template-columns: minmax(0, 1fr); gap: var(--s-4); }
 }
 @media (max-width: 900px) {
   .shell { grid-template-columns: minmax(0, 1fr); background: none; }
   .sidebar { position: sticky; top: 0; z-index: 30; height: auto; flex-direction: row; flex-wrap: wrap; align-items: center; gap: var(--s-2) var(--s-4); padding: 10px 16px; border-inline-end: 0; border-bottom: 1px solid var(--line); overflow: visible; }
   .workspace, .side-foot, .nav-group, .nav-hint { display: none; }
   .brand { padding: 0; }
-  .side-nav { flex-direction: row; flex: 1 1 100%; gap: 4px; }
-  .side-nav a { flex: 1; justify-content: center; padding: 8px 6px; gap: 6px; font-size: var(--t-sm); }
+  .side-nav { flex-direction: row; flex: 1 1 100%; gap: 4px; overflow-x: auto; scrollbar-width: none; }
+  .side-nav a { flex: 1 0 auto; justify-content: center; padding: 8px 7px; gap: 6px; font-size: var(--t-sm); white-space: nowrap; }
   .side-nav a > span:first-of-type { flex: none; }
   .page { padding: var(--s-5) 16px var(--s-6); gap: var(--s-4); }
   .disclaimer { padding: var(--s-4) 16px var(--s-5); }

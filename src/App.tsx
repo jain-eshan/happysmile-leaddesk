@@ -2,6 +2,7 @@ import { BrowserRouter, NavLink, Route, Routes, Link } from 'react-router-dom';
 import Overview from './pages/Overview';
 import Patient from './pages/Patient';
 import Desk from './pages/Desk';
+import Video from './pages/Video';
 import { Icon, ic } from './icons';
 import { leads } from './data';
 
@@ -39,6 +40,10 @@ export default function App() {
               <Icon d={ic.dashboard} size={18} />
               <span>Overview</span>
             </NavLink>
+            <NavLink to="/video">
+              <Icon d={ic.play} size={18} />
+              <span>Video</span>
+            </NavLink>
             <span className="nav-group">Product</span>
             <NavLink to="/patient">
               <Icon d={ic.phoneDevice} size={18} />
@@ -66,6 +71,7 @@ export default function App() {
             <Route path="/" element={<Overview />} />
             <Route path="/patient" element={<Patient />} />
             <Route path="/desk" element={<Desk />} />
+            <Route path="/video" element={<Video />} />
             <Route path="*" element={<Overview />} />
           </Routes>
           <footer className="disclaimer">
