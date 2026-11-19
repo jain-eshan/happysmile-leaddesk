@@ -30,8 +30,8 @@ function Rules({ onClose }: { onClose: () => void }) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
-  const Row = ({ k, label }: { k: string; label: string }) => (
-    <div className="toggle-row">
+  const row = (k: string, label: string) => (
+    <div className="toggle-row" key={k}>
       <span id={'lbl-' + k}>{label}</span>
       <button className="switch" role="switch" aria-checked={rules[k]} aria-labelledby={'lbl-' + k} onClick={() => flip(k)} />
     </div>
@@ -71,11 +71,11 @@ function Rules({ onClose }: { onClose: () => void }) {
 
         <div className="card rule">
           <h3>Hand to the front desk when</h3>
-          <Row k="clinical" label="Patient asks a clinical question" />
-          <Row k="price" label="Patient negotiates on price" />
-          <Row k="implants" label="Implant or full-arch lead (human closes)" />
-          <Row k="human" label="Patient asks for a person" />
-          <Row k="confused" label="Agent misunderstands twice" />
+          {row('clinical', 'Patient asks a clinical question')}
+          {row('price', 'Patient negotiates on price')}
+          {row('implants', 'Implant or full-arch lead (human closes)')}
+          {row('human', 'Patient asks for a person')}
+          {row('confused', 'Agent misunderstands twice')}
         </div>
 
         <div className="card rule">
@@ -84,8 +84,8 @@ function Rules({ onClose }: { onClose: () => void }) {
             <span>Aligners and braces · Implants · Tooth pain</span>
             <span className="tag ok">Live</span>
           </div>
-          <Row k="teenParent" label="Teen braces: invite both parents, prefer weekends" />
-          <Row k="cleaningWa" label="Cleaning: WhatsApp only, no call" />
+          {row('teenParent', 'Teen braces: invite both parents, prefer weekends')}
+          {row('cleaningWa', 'Cleaning: WhatsApp only, no call')}
           <div className="toggle-row">
             <span>Wedding smile (date-bound)</span>
             <span className="tag grey">Next</span>
@@ -98,7 +98,7 @@ function Rules({ onClose }: { onClose: () => void }) {
             <span>Never deny being AI when asked</span>
             <span className="tag dark">Always on</span>
           </div>
-          <Row k="disclosureTest" label="Test: say it upfront on 50% of calls" />
+          {row('disclosureTest', 'Test: say it upfront on 50% of calls')}
         </div>
 
         <div className="card rule">
@@ -137,7 +137,7 @@ function Rules({ onClose }: { onClose: () => void }) {
 function Detail({ lead }: { lead: Lead }) {
   const s = statusMeta[lead.status];
   return (
-    <div className="card detail">
+    <div className="card detail" id="lead-detail">
       <div className="detail-top">
         <div>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -299,7 +299,10 @@ export default function Desk() {
             const s = statusMeta[l.status];
             return (
               <li key={l.id}>
-              <button className="lead" aria-current={lead && l.id === lead.id ? 'true' : undefined} onClick={() => setSelected(l.id)}>
+              <button className="lead" aria-current={lead && l.id === lead.id ? 'true' : undefined} onClick={() => {
+                  setSelected(l.id);
+                  if (window.matchMedia('(max-width: 1100px)').matches) document.getElementById('lead-detail')?.scrollIntoView({ block: 'start' });
+                }}>
                 <div className="top">
                   <span className="nm">{l.name}</span>
                   <span className={'tag ' + s.tone}>{s.label}</span>
